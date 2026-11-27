@@ -25,7 +25,24 @@ jobs:
           pip install buildozer "cython<3" virtualenv setuptools
 
       - name: Build APK
-        run: buildozer -v android debug
+        shell: bash
+        run: buildozer -v android debug 2>&1 | tee build.log
+
+      - name: Ringkasan error
+        if: failure()
+        shell: bash
+        run: |
+          echo "===== BARIS ERROR ====="
+          grep -n -i -E "error|failed|traceback|fatal" build.log | grep -v -E "print-multi-os-directory|no input files|checking" | tail -40 | cut -c1-300
+          echo "===== 60 BARIS TERAKHIR ====="
+          tail -60 build.log | cut -c1-300
+
+      - name: Simpan log lengkap
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Simpan APK
         uses: actions/upload-artifact@v4
